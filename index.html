@@ -1,0 +1,1436 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Next Train — a MARTA widget for your home screen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #14161c;
+        --panel: #1e212a;
+        --panel-border: #2c303b;
+        --text: #edeef0;
+        --muted: #7b8494;
+        --amber: #e8a33d;
+        --amber-dim: #6b531f;
+        --red-line: #d6534a;
+        --gold-line: #e8a33d;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          "Inter",
+          -apple-system,
+          sans-serif;
+        line-height: 1.5;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+
+      .wrap {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+
+      /* ---------- Hero: the board ---------- */
+
+      .hero {
+        padding: 64px 0 32px;
+      }
+
+      .hero-label {
+        color: var(--muted);
+        font-size: 15px;
+        margin: 0 0 8px;
+      }
+
+      .hero h1 {
+        font-size: 34px;
+        line-height: 1.2;
+        margin: 0 0 28px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+
+      /* Widget mockup — styled to match the actual generated small
+         Scriptable widget as closely as CSS allows. */
+      .widget-stage {
+        background: linear-gradient(160deg, #2a2f3d, #0f1116 70%);
+        border-radius: 32px;
+        padding: 32px;
+        display: flex;
+        justify-content: center;
+        box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.6);
+      }
+
+      .widget-mock {
+        width: 200px;
+        height: 200px;
+        background: var(--bg);
+        border-radius: 42px;
+        padding: 18px 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .widget-header-row {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        text-align: center;
+      }
+
+      .widget-left-col,
+      .widget-right-col {
+        display: contents;
+      }
+
+      .widget-station {
+        font-size: 17px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        line-height: 1.15;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .widget-linedest {
+        font-size: 12px;
+        color: var(--text);
+        margin-top: 3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .widget-headline {
+        font-size: 30px;
+        font-weight: 700;
+        color: var(--amber);
+        line-height: 1.05;
+        white-space: nowrap;
+        text-align: center;
+      }
+
+      .widget-refreshed {
+        font-size: 11px;
+        font-weight: 600;
+        color: #acacad;
+        margin-top: 10px;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      .widget-next {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 6px;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      .hero-refresh-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 24px;
+      }
+
+      .hero-status {
+        color: var(--muted);
+        font-size: 12px;
+        font-family: "IBM Plex Mono", monospace;
+      }
+
+      .hero-refresh-btn {
+        background: none;
+        border: none;
+        color: var(--muted);
+        font-family: "Inter", sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 0;
+        width: auto;
+        cursor: pointer;
+      }
+
+      .hero-refresh-btn:hover {
+        color: var(--text);
+      }
+
+      .hero-refresh-btn:disabled {
+        color: var(--muted);
+        opacity: 0.5;
+      }
+
+      /* ---------- Sections ---------- */
+
+      section {
+        padding: 32px 0;
+        border-top: 1px solid var(--panel-border);
+      }
+
+      h2 {
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0 0 6px;
+      }
+
+      .section-sub {
+        color: var(--muted);
+        font-size: 15px;
+        margin: 0 0 24px;
+      }
+
+      /* ---------- About ---------- */
+
+      .about p {
+        color: var(--muted);
+        font-size: 15px;
+        margin: 0 0 14px;
+      }
+
+      /* ---------- FAQ ---------- */
+
+      .about a,
+      .faq a {
+        color: var(--amber);
+      }
+
+      .faq details {
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 6px;
+        margin-bottom: 10px;
+      }
+
+      .faq details[open] {
+        border-color: var(--amber-dim);
+      }
+
+      .faq summary {
+        position: relative;
+        cursor: pointer;
+        list-style: none;
+        padding: 14px 44px 14px 16px;
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: 6px;
+      }
+
+      .faq summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .faq summary::after {
+        content: "";
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        width: 12px;
+        height: 8px;
+        margin-top: -4px;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%237B8494' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")
+          no-repeat center;
+        transition: transform 0.15s ease;
+      }
+
+      .faq details[open] summary::after {
+        transform: rotate(180deg);
+      }
+
+      .faq summary:focus-visible {
+        outline: 2px solid var(--amber);
+        outline-offset: 2px;
+      }
+
+      .faq details p {
+        margin: 0;
+        padding: 0 16px 16px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      /* ---------- Station picker ---------- */
+
+      select {
+        width: 100%;
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        color: var(--text);
+        font-family: "Inter", sans-serif;
+        font-size: 16px;
+        padding: 14px 16px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%237B8494' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+      }
+
+      select:focus-visible {
+        outline: 2px solid var(--amber);
+        outline-offset: 2px;
+      }
+
+      select:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .script-box {
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 6px;
+        padding: 16px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12.5px;
+        color: var(--muted);
+        max-height: 160px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin-bottom: 12px;
+      }
+
+      button {
+        font-family: "Inter", sans-serif;
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: 6px;
+        border: none;
+        padding: 14px 20px;
+        cursor: pointer;
+        width: 100%;
+      }
+
+      button:focus-visible {
+        outline: 2px solid var(--amber);
+        outline-offset: 2px;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+
+      .btn-primary {
+        background: var(--amber);
+        color: #1a1200;
+        transition: background 0.15s ease;
+      }
+
+      .btn-primary:hover {
+        background: #f0ae4e;
+      }
+
+      .btn-primary[data-copied="true"] {
+        background: #4a5568;
+        color: var(--text);
+      }
+
+      .btn-primary:disabled {
+        background: var(--panel-border);
+        color: var(--muted);
+      }
+
+      .btn-secondary {
+        background: transparent;
+        color: var(--muted);
+        border: 1px solid var(--panel-border);
+        margin-top: 10px;
+      }
+
+      .btn-secondary:hover {
+        color: var(--text);
+        border-color: var(--amber-dim);
+      }
+
+      .btn-secondary:disabled {
+        opacity: 0.5;
+      }
+
+      /* ---------- Install steps ---------- */
+
+      .steps {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        counter-reset: step;
+      }
+
+      .steps li {
+        counter-increment: step;
+        display: grid;
+        grid-template-columns: 28px 1fr;
+        gap: 14px;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--panel-border);
+      }
+
+      .steps li:last-child {
+        border-bottom: none;
+      }
+
+      .steps li::before {
+        content: counter(step);
+        font-family: "IBM Plex Mono", monospace;
+        color: var(--amber);
+        font-size: 14px;
+        border: 1px solid var(--amber-dim);
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .step-title {
+        font-weight: 600;
+        margin: 0 0 4px;
+        font-size: 15px;
+      }
+
+      .step-desc {
+        color: var(--muted);
+        font-size: 14px;
+        margin: 0;
+      }
+
+      .step-desc a {
+        color: var(--amber);
+      }
+
+      .info-box {
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-left: 3px solid var(--amber);
+        border-radius: 6px;
+        padding: 14px 16px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .info-box p {
+        margin: 0;
+      }
+
+      .info-box strong {
+        color: var(--text);
+      }
+
+      footer {
+        padding: 32px 0 64px;
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="hero">
+        <p class="hero-label">A widget for MARTA riders</p>
+        <h1>Your next train, on your home screen.</h1>
+
+        <div class="widget-stage" aria-hidden="true">
+          <div class="widget-mock" id="hero-widget">
+            <div class="widget-header-row">
+              <div class="widget-station" id="hero-station">FIVE POINTS</div>
+              <div class="widget-linedest" id="hero-linedest">
+                GOLD → Airport
+              </div>
+              <div class="widget-headline" id="hero-headline">5:47 PM</div>
+            </div>
+            <div class="widget-refreshed" id="hero-refreshed">
+              Last refreshed 5:43 PM
+            </div>
+            <div class="widget-next" id="hero-next">
+              Next trains: 6:04 PM, 6:16 PM
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-refresh-row">
+          <span class="hero-status" id="hero-footer">LOADING LIVE DATA…</span>
+          <button class="hero-refresh-btn" id="hero-refresh-btn" type="button">
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <section id="setup">
+        <h2>Pick your station</h2>
+        <p class="section-sub">
+          This generates a short script for your stop. It runs inside the free
+          Scriptable app, so there's nothing else to install.
+        </p>
+
+        <select id="station-select">
+          <option value="">Choose a station…</option>
+        </select>
+
+        <select id="line-select" disabled>
+          <option value="">Choose a line…</option>
+        </select>
+
+        <select id="destination-select" disabled>
+          <option value="">Choose a direction…</option>
+        </select>
+
+        <div class="script-box" id="script-preview" style="display: none">
+          Select a station, line, and direction to generate your script.
+        </div>
+
+        <button class="btn-primary" id="copy-btn" disabled>
+          Copy script to clipboard
+        </button>
+        <button class="btn-secondary" id="toggle-script-btn" disabled>
+          Show script
+        </button>
+      </section>
+
+      <section id="install">
+        <h2>Add it to your home screen</h2>
+        <p class="section-sub">Three steps, about two minutes.</p>
+
+        <ol class="steps">
+          <li>
+            <div>
+              <p class="step-title">Install Scriptable</p>
+              <p class="step-desc">
+                It's free, from the
+                <a
+                  href="https://apps.apple.com/app/scriptable/id1405459188"
+                  target="_blank"
+                  rel="noopener"
+                  >App Store</a
+                >. This is what runs your widget.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p class="step-title">Paste your script</p>
+              <p class="step-desc">
+                Open Scriptable, tap the <strong>+</strong>, and paste the
+                script you copied above. Give it any name you'll recognize.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p class="step-title">Add the widget</p>
+              <p class="step-desc">
+                From your home screen, touch and hold an empty area, tap the
+                <strong>+</strong>, find <strong>Scriptable</strong>, and choose
+                the <strong>small</strong> size. Set it to run the script you
+                just saved.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p class="step-title">Set "When Interacting" to Run Script</p>
+              <p class="step-desc">
+                Long-press the widget, tap <strong>Edit Widget</strong>, and set
+                <strong>When Interacting</strong> to
+                <strong>Run Script</strong>. This lets you tap the widget on
+                your home screen to refresh the arrival time on demand, instead
+                of waiting for the automatic refresh.
+              </p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section id="how-it-works">
+        <h2>How the widget works</h2>
+        <p class="section-sub">
+          A few things to know so you know when the time on your home screen was
+          last updated.
+        </p>
+
+        <ol class="steps">
+          <li>
+            <div>
+              <p class="step-title">Widgets don't refresh continuously</p>
+              <p class="step-desc">
+                iPhone widgets are not designed to fetch new data every few
+                seconds. This widget asks iOS to refresh about every 15 minutes,
+                but the exact timing is controlled by iOS and can vary.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p class="step-title">
+                Tap the widget when you want a fresh update
+              </p>
+              <p class="step-desc">
+                If the displayed time looks old, tap the widget. With
+                <strong>When Interacting</strong> set to
+                <strong>Run Script</strong>, Scriptable can run the script when
+                you interact with the widget instead of waiting for the next
+                automatic refresh.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p class="step-title">
+                "Last refreshed" tells you when the data was fetched
+              </p>
+              <p class="step-desc">
+                The <strong>Last refreshed</strong> time is the most recent time
+                this widget successfully fetched arrival data from the service.
+                It helps you judge how old the displayed arrival times might be.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p class="step-title">Arrival times are not countdowns</p>
+              <p class="step-desc">
+                The widget displays the arrival time MARTA provides rather than
+                continuously counting down to the train. The displayed time can
+                therefore become stale until the widget refreshes again.
+              </p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section id="faq" class="faq">
+        <h2>FAQ</h2>
+        <details>
+          <summary>Why do I need Scriptable instead of a regular app?</summary>
+          <p>
+            Building a native iPhone widget requires a Mac and Apple's developer
+            tools, and distributing an app means an Apple Developer account and
+            App Store review. I built this as a side project without those, so I
+            used Scriptable, a free app that lets small scripts run as home
+            screen widgets. The tradeoff is a few extra setup steps for you. The
+            upside is that the whole thing is a short script you can read before
+            you run it.
+          </p>
+        </details>
+        <details>
+          <summary>Does it work on Android?</summary>
+          <p>
+            No. Scriptable is only available for iPhone and iPad, and the script
+            it runs is written for it, so this widget is iOS only.
+          </p>
+        </details>
+        <details>
+          <summary>Does it cover buses or just trains?</summary>
+          <p>
+            Just MARTA rail: the Red, Gold, Blue, and Green lines. Buses and the
+            streetcar are not included.
+          </p>
+        </details>
+        <details>
+          <summary>Can I have more than one station?</summary>
+          <p>
+            Yes. Each widget shows one station, line, and direction, so generate
+            a script for each one you want. Save each as its own script in
+            Scriptable, then add another Scriptable widget to your home screen
+            and point it at that script.
+          </p>
+        </details>
+        <details>
+          <summary>Why does it say &ldquo;No trains soon&rdquo;?</summary>
+          <p>
+            The widget reached MARTA's data fine, but there are no upcoming
+            arrivals listed for that station, line, and direction right now.
+            That's common late at night or when service has ended for the day.
+            It's different from &ldquo;Can't load data&rdquo;, which means the
+            widget couldn't reach the service at all. In that case, tap the
+            widget to try again.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Why is the time different from the signs in the station?
+          </summary>
+          <p>
+            The widget uses MARTA's public real-time data, which can run a few
+            minutes behind what the station signs show. The widget also only
+            updates when it refreshes, so the time on your home screen is as of
+            the &ldquo;Last refreshed&rdquo; time shown on it. If it looks old,
+            tap the widget to update it. When in doubt, trust the station signs.
+            See <a href="#how-it-works">How the widget works</a> for more.
+          </p>
+        </details>
+        <details>
+          <summary>What data do you collect?</summary>
+          <p>
+            No accounts, no names, no email addresses, and no location. Each
+            widget sends a random ID that's generated on your phone and isn't
+            tied to you. When a widget requests arrivals, my server logs that
+            ID, the station, line, and direction requested, the time, and
+            whether the request worked. If someone sends too many requests too
+            quickly, the server also logs their IP address and the request path.
+            I use this to see how the service is running and to fix problems.
+          </p>
+        </details>
+      </section>
+
+      <section id="about" class="about">
+        <h2>About</h2>
+        <p>
+          I got tired of opening the MARTA app and clicking around just to see
+          when the next train was coming. So I made this widget for myself: one
+          glance at my home screen and I know when to leave.
+        </p>
+        <p>
+          After using it for a while, I figured other riders might feel the same
+          way, so I put it online for anyone who wants it. It runs through the
+          free Scriptable app instead of a native app, and the
+          <a href="#faq">FAQ</a> explains why.
+        </p>
+        <p>
+          Arrival data comes from MARTA's public real-time data service. There
+          are no accounts and no sign-up, and the project is an independent side
+          project run by one person.
+        </p>
+      </section>
+
+      <footer>
+        Not affiliated with MARTA. Arrival times come from MARTA's public
+        real-time data and can run a few minutes behind. Widgets will not
+        provide service alerts, delays, outages, or other service-issue notices.
+      </footer>
+    </div>
+
+    <script>
+      // Complete MARTA rail map: for each station, which lines serve it,
+      // and for each line, the valid destination directions from that
+      // station. This is the source of truth for the dropdowns below —
+      // keep it in sync with the backend's stations.js SUPPORTED_STATIONS
+      // and LINE_DESTINATIONS if either ever changes.
+      const STATION_DATA = {
+        "North Springs": { RED: ["Airport"] },
+        "Sandy Springs": { RED: ["North Springs", "Airport"] },
+        Dunwoody: { RED: ["North Springs", "Airport"] },
+        "Medical Center": { RED: ["North Springs", "Airport"] },
+        Buckhead: { RED: ["North Springs", "Airport"] },
+        Doraville: { GOLD: ["Airport"] },
+        Chamblee: { GOLD: ["Doraville", "Airport"] },
+        "Brookhaven/Oglethorpe": { GOLD: ["Doraville", "Airport"] },
+        Lenox: { GOLD: ["Doraville", "Airport"] },
+        "Lindbergh Center": {
+          RED: ["North Springs", "Airport"],
+          GOLD: ["Doraville", "Airport"],
+        },
+        "Arts Center": {
+          RED: ["North Springs", "Airport"],
+          GOLD: ["Doraville", "Airport"],
+        },
+        Midtown: {
+          RED: ["North Springs", "Airport"],
+          GOLD: ["Doraville", "Airport"],
+        },
+        "North Ave": {
+          RED: ["North Springs", "Airport"],
+          GOLD: ["Doraville", "Airport"],
+        },
+        "Civic Center": {
+          RED: ["North Springs", "Airport"],
+          GOLD: ["Doraville", "Airport"],
+        },
+        "Peachtree Center": {
+          RED: ["North Springs", "Airport"],
+          GOLD: ["Doraville", "Airport"],
+        },
+        "Five Points": {
+          RED: ["North Springs", "Airport"],
+          GOLD: ["Doraville", "Airport"],
+          BLUE: ["Hamilton E. Holmes", "Indian Creek"],
+          GREEN: ["Bankhead", "Edgewood/Candler Park"],
+        },
+        Garnett: {
+          RED: ["North Springs", "Airport"],
+          GOLD: ["Doraville", "Airport"],
+        },
+        "West End": {
+          RED: ["North Springs", "Airport"],
+          GOLD: ["Doraville", "Airport"],
+        },
+        "Oakland City": {
+          RED: ["North Springs", "Airport"],
+          GOLD: ["Doraville", "Airport"],
+        },
+        "Lakewood/Fort McPherson": {
+          RED: ["North Springs", "Airport"],
+          GOLD: ["Doraville", "Airport"],
+        },
+        "East Point": {
+          RED: ["North Springs", "Airport"],
+          GOLD: ["Doraville", "Airport"],
+        },
+        "College Park": {
+          RED: ["North Springs", "Airport"],
+          GOLD: ["Doraville", "Airport"],
+        },
+        Airport: { RED: ["North Springs"], GOLD: ["Doraville"] },
+        "Hamilton E. Holmes": { BLUE: ["Indian Creek"] },
+        "West Lake": { BLUE: ["Hamilton E. Holmes", "Indian Creek"] },
+        Ashby: {
+          BLUE: ["Hamilton E. Holmes", "Indian Creek"],
+          GREEN: ["Bankhead", "Edgewood/Candler Park"],
+        },
+        "Vine City": {
+          BLUE: ["Hamilton E. Holmes", "Indian Creek"],
+          GREEN: ["Bankhead", "Edgewood/Candler Park"],
+        },
+        "GWCC/CNN Center": {
+          BLUE: ["Hamilton E. Holmes", "Indian Creek"],
+          GREEN: ["Bankhead", "Edgewood/Candler Park"],
+        },
+        "Georgia State": {
+          BLUE: ["Hamilton E. Holmes", "Indian Creek"],
+          GREEN: ["Bankhead", "Edgewood/Candler Park"],
+        },
+        "King Memorial": {
+          BLUE: ["Hamilton E. Holmes", "Indian Creek"],
+          GREEN: ["Bankhead", "Edgewood/Candler Park"],
+        },
+        "Inman Park/Reynoldstown": {
+          BLUE: ["Hamilton E. Holmes", "Indian Creek"],
+          GREEN: ["Bankhead", "Edgewood/Candler Park"],
+        },
+        "Edgewood/Candler Park": {
+          BLUE: ["Hamilton E. Holmes", "Indian Creek"],
+          GREEN: ["Bankhead"],
+        },
+        "East Lake": { BLUE: ["Hamilton E. Holmes", "Indian Creek"] },
+        Decatur: { BLUE: ["Hamilton E. Holmes", "Indian Creek"] },
+        Avondale: { BLUE: ["Hamilton E. Holmes", "Indian Creek"] },
+        Kensington: { BLUE: ["Hamilton E. Holmes", "Indian Creek"] },
+        "Indian Creek": { BLUE: ["Hamilton E. Holmes"] },
+        Bankhead: { GREEN: ["Edgewood/Candler Park"] },
+      };
+
+      // Replace with your deployed backend URL before publishing.
+      const API_BASE_URL = "https://marta-widget-server.onrender.com";
+
+      const stationSelect = document.getElementById("station-select");
+      const lineSelect = document.getElementById("line-select");
+      const destinationSelect = document.getElementById("destination-select");
+      const preview = document.getElementById("script-preview");
+      const copyBtn = document.getElementById("copy-btn");
+      const toggleBtn = document.getElementById("toggle-script-btn");
+
+      let scriptVisible = false;
+
+      // Station dropdown lists every station once, alphabetically.
+      Object.keys(STATION_DATA)
+        .sort()
+        .forEach((name) => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          stationSelect.appendChild(opt);
+        });
+
+      function resetLineAndDestination() {
+        lineSelect.innerHTML = '<option value="">Choose a line…</option>';
+        destinationSelect.innerHTML =
+          '<option value="">Choose a direction…</option>';
+        lineSelect.disabled = true;
+        destinationSelect.disabled = true;
+      }
+
+      function resetPreview() {
+        preview.textContent =
+          "Select a station, line, and direction to generate your script.";
+        copyBtn.disabled = true;
+        toggleBtn.disabled = true;
+        scriptVisible = false;
+        preview.style.display = "none";
+        toggleBtn.textContent = "Show script";
+      }
+
+      function tryGenerate() {
+        const station = stationSelect.value;
+        const line = lineSelect.value;
+        const destination = destinationSelect.value;
+        if (!station || !line || !destination) {
+          resetPreview();
+          return;
+        }
+        preview.textContent = buildScript(station, line, destination);
+        copyBtn.disabled = false;
+        copyBtn.textContent = "Copy script to clipboard";
+        copyBtn.dataset.copied = "false";
+        toggleBtn.disabled = false;
+        // Collapse the script again any time the selection changes —
+        // it's a different script now, so don't leave a stale one open.
+        scriptVisible = false;
+        preview.style.display = "none";
+        toggleBtn.textContent = "Show script";
+      }
+
+      function buildScript(station, line, destination) {
+        return `// Next Train widget — ${station} (${line} Line toward ${destination})
+      // Generated for use with Scriptable (scriptable.app)
+
+      const STATION = ${JSON.stringify(station)};
+      const LINE = ${JSON.stringify(line)};
+      const DESTINATION = ${JSON.stringify(destination)};
+      const API_URL = ${JSON.stringify(API_BASE_URL)};
+
+      const url = \`\${API_URL}/next-train?destination=\${encodeURIComponent(DESTINATION)}&line=\${encodeURIComponent(LINE)}&station=\${encodeURIComponent(STATION)}\`;
+
+      // Cache the last successful response briefly so repeated script runs
+      // do not all hit the API. A widget may be refreshed by iOS roughly every
+      // 15 minutes, while a tap can run the script sooner. The cache prevents
+      // accidental repeated requests during quick re-runs.
+      const CACHE_TTL_MS = 60 * 1000;
+      const fm = FileManager.local();
+      const cachePath = fm.joinPath(fm.documentsDirectory(), \`marta-widget-cache-\${STATION}-\${LINE}-\${DESTINATION}\`.replace(/[^a-zA-Z0-9-]/g, "_"));
+
+      const idPath = fm.joinPath(fm.documentsDirectory(), "marta-widget-client-id");
+      if (!fm.fileExists(idPath)) fm.writeString(idPath, UUID.string());
+      const CLIENT_ID = fm.readString(idPath);
+
+      let data = null;
+      let fetchError = null;
+      let lastRefreshedAt = null;
+
+      if (fm.fileExists(cachePath)) {
+        try {
+          const cached = JSON.parse(fm.readString(cachePath));
+          if (Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
+            data = cached.data;
+            lastRefreshedAt = cached.fetchedAt;
+          }
+        } catch (e) {
+          // Corrupt or unreadable cache file — ignore and fetch fresh.
+        }
+      }
+
+      if (!data) {
+        try {
+          const req = new Request(url);
+          req.headers = { "x-client-id": CLIENT_ID };
+          data = await req.loadJSON();
+
+          const statusCode = req.response ? req.response.statusCode : null;
+          if (statusCode !== null && (statusCode < 200 || statusCode >= 300)) {
+            data = null;
+            fetchError = \`Server error (\${statusCode})\`;
+          } else {
+            lastRefreshedAt = Date.now();
+            fm.writeString(cachePath, JSON.stringify({ data, fetchedAt: lastRefreshedAt }));
+          }
+        } catch (e) {
+          data = null;
+          fetchError = e.message || String(e);
+        }
+      }
+
+      // The backend now returns { arrivals: [...] } — up to 3 upcoming
+      // arrivals, soonest first. \`next\` is the one to headline; \`upcoming\`
+      // is what comes after it.
+      const arrivals = data && Array.isArray(data.arrivals) ? data.arrivals : [];
+      const next = arrivals[0] || null;
+      const upcoming = arrivals.slice(1, 3);
+
+      // Parse a "5:47 PM"-style clock string into a real Date for *today*.
+      // If the parsed time looks like it's more than a few hours in the
+      // past, assume it actually means the next occurrence after a midnight
+      // rollover (e.g. a "12:03 AM" arrival read late in the evening) and
+      // roll it forward a day.
+      function parseClockTimeToday(clockStr) {
+        if (!clockStr) return null;
+        const match = clockStr.trim().match(/^(\\d{1,2}):(\\d{2})\\s*([AP]M)$/i);
+        if (!match) return null;
+        let hours = parseInt(match[1], 10) % 12;
+        const minutes = parseInt(match[2], 10);
+        if (match[3].toUpperCase() === "PM") hours += 12;
+        const result = new Date();
+        result.setHours(hours, minutes, 0, 0);
+        const sixHoursMs = 6 * 60 * 60 * 1000;
+        if (result.getTime() < Date.now() - sixHoursMs) {
+          result.setDate(result.getDate() + 1);
+        }
+        return result;
+      }
+
+      const nextArrivalDate = next ? deriveTargetDate(next) : null;
+      const isArrivingNow = next && next.waitingTime === "Arriving";
+
+      // Prefer the backend's own formatted arrival clock string when it's
+      // present and parses cleanly. Otherwise derive a target time directly
+      // from the "X min" waiting-time string (e.g. "17 min" -> now + 17
+      // minutes) — this covers arrivals where the backend only supplies a
+      // relative waiting time and not a formatted clock string, which is
+      // common for the arrivals after the immediate next one.
+      function deriveTargetDate(arrivalObj) {
+        if (!arrivalObj) return null;
+        const fromClockString = parseClockTimeToday(arrivalObj.arrival);
+        if (fromClockString) return fromClockString;
+        const match =
+          arrivalObj.waitingTime &&
+          arrivalObj.waitingTime.match(/(\\d+(?:\\.\\d+)?)\\s*min/i);
+        if (match) {
+          return new Date(Date.now() + parseFloat(match[1]) * 60000);
+        }
+        return null;
+      }
+
+      // Always format clock times ourselves (hour + 2-digit minute, no
+      // seconds) rather than passing through whatever string shape the
+      // backend happens to send — keeps every displayed time consistent
+      // regardless of what the API returns.
+      function formatClock(date) {
+        return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+      }
+
+      function upcomingClockLabel(arrivalObj) {
+        const d = deriveTargetDate(arrivalObj);
+        return d ? formatClock(d) : arrivalObj.waitingTime || "—";
+      }
+
+      const widget = new ListWidget();
+      widget.backgroundColor = new Color("#14161C");
+
+      // Scriptable reports which size the OS actually placed on the home
+      // screen via config.widgetFamily ("small", "medium", or "large").
+      // It's undefined when previewing inside the Scriptable app itself
+      // rather than as a real placed widget.
+      const family = config.widgetFamily;
+      const isSmall = family === "small";
+
+      if (isSmall) {
+        // Small widgets are a single vertical column: station, line and
+        // destination, headline arrival, then the freshness line and the
+        // next couple of trains.
+        widget.addSpacer();
+
+        const stationLabel = widget.addText(STATION.toUpperCase());
+        stationLabel.font = Font.heavySystemFont(18);
+        stationLabel.textColor = new Color("#EDEEF0");
+        stationLabel.lineLimit = 1;
+        stationLabel.minimumScaleFactor = 0.6;
+        stationLabel.centerAlignText();
+
+        widget.addSpacer(3);
+
+        const lineDestLabel = widget.addText(\`\${LINE} → \${DESTINATION}\`);
+        lineDestLabel.font = Font.systemFont(13);
+        lineDestLabel.textColor = new Color("#EDEEF0");
+        lineDestLabel.lineLimit = 1;
+        lineDestLabel.minimumScaleFactor = 0.7;
+        lineDestLabel.centerAlignText();
+
+        widget.addSpacer(8);
+
+        if (fetchError) {
+          const errLabel = widget.addText("Can't load data");
+          errLabel.font = Font.mediumSystemFont(14);
+          errLabel.textColor = new Color("#D6534A");
+          errLabel.centerAlignText();
+          errLabel.lineLimit = 1;
+          errLabel.minimumScaleFactor = 0.6;
+        } else if (!next) {
+          const emptyLabel = widget.addText("No trains soon");
+          emptyLabel.font = Font.systemFont(14);
+          emptyLabel.textColor = new Color("#7B8494");
+          emptyLabel.centerAlignText();
+          emptyLabel.lineLimit = 1;
+        } else if (isArrivingNow) {
+          const arrivingLabel = widget.addText("Arriving");
+          arrivingLabel.font = Font.boldSystemFont(24);
+          arrivingLabel.textColor = new Color("#E8A33D");
+          arrivingLabel.centerAlignText();
+          arrivingLabel.lineLimit = 1;
+          arrivingLabel.minimumScaleFactor = 0.6;
+
+          if (nextArrivalDate) {
+            widget.addSpacer(2);
+            const atLabel = widget.addText(\`at \${formatClock(nextArrivalDate)}\`);
+            atLabel.font = Font.systemFont(11);
+            atLabel.textColor = new Color("#7B8494");
+            atLabel.centerAlignText();
+            atLabel.lineLimit = 1;
+          }
+        } else {
+          const label = nextArrivalDate ? formatClock(nextArrivalDate) : (next.waitingTime || "—");
+          const clockLabel = widget.addText(label);
+          clockLabel.font = Font.boldSystemFont(26);
+          clockLabel.textColor = new Color("#E8A33D");
+          clockLabel.centerAlignText();
+          clockLabel.lineLimit = 1;
+          clockLabel.minimumScaleFactor = 0.5;
+        }
+
+        // Footer: only when the fetch succeeded (on an error nothing was
+        // actually refreshed, so a timestamp would be misleading).
+        if (!fetchError) {
+          widget.addSpacer(8);
+
+          const refreshedLabel = widget.addText(\`Last refreshed \${formatClock(new Date(lastRefreshedAt || Date.now()))}\`);
+          refreshedLabel.font = Font.mediumSystemFont(10);
+          refreshedLabel.textColor = new Color("#ACACAD");
+          refreshedLabel.centerAlignText();
+          refreshedLabel.lineLimit = 1;
+          refreshedLabel.minimumScaleFactor = 0.6;
+
+          if (upcoming.length) {
+            widget.addSpacer(4);
+            const nextTrainsLabel = widget.addText(\`Next trains: \${upcoming.map(upcomingClockLabel).join(", ")}\`);
+            nextTrainsLabel.font = Font.systemFont(10);
+            nextTrainsLabel.textColor = new Color("#7B8494");
+            nextTrainsLabel.centerAlignText();
+            nextTrainsLabel.lineLimit = 1;
+            nextTrainsLabel.minimumScaleFactor = 0.6;
+          }
+        }
+
+        widget.addSpacer();
+
+      } else {
+        // Medium/large (and in-app preview): follows the same design
+        // principles as the small widget — station as a clear header, the
+        // line/destination shown once underneath it (not repeated per
+        // row), and up to 3 arrivals each rendered as their own row. The
+        // first row is spotlighted (larger, bold, amber) since it's the
+        // immediate next train; the rest are smaller and dimmer, same
+        // visual hierarchy as the small widget's headline vs. secondary
+        // text, just given more room to breathe here. No live countdown,
+        // for the same reason as the small widget.
+        const stationHeader = widget.addText(STATION.toUpperCase());
+        stationHeader.font = Font.heavySystemFont(18);
+        stationHeader.textColor = new Color("#EDEEF0");
+        stationHeader.lineLimit = 1;
+        stationHeader.minimumScaleFactor = 0.7;
+
+        widget.addSpacer(2);
+
+        const lineDestLabel = widget.addText(\`\${LINE} → \${DESTINATION}\`);
+        lineDestLabel.font = Font.systemFont(13);
+        lineDestLabel.textColor = new Color("#7B8494");
+        lineDestLabel.lineLimit = 1;
+
+        widget.addSpacer(10);
+
+        if (fetchError) {
+          // Real error — distinct from "nothing scheduled". No refreshed
+          // timestamp here since nothing actually refreshed.
+          const errLabel = widget.addText("Can't load data");
+          errLabel.font = Font.mediumSystemFont(15);
+          errLabel.textColor = new Color("#D6534A");
+          widget.addSpacer(4);
+          const errText = widget.addText(fetchError);
+          errText.font = Font.systemFont(10);
+          errText.textColor = new Color("#7B8494");
+        } else if (!next) {
+          // Successful response, genuinely nothing scheduled right now.
+          const empty = widget.addText("No trains soon");
+          empty.font = Font.systemFont(14);
+          empty.textColor = new Color("#7B8494");
+          widget.addSpacer(6);
+          const refreshedLabel = widget.addText(
+            \`Last refreshed \${new Date(lastRefreshedAt || Date.now()).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}\`,
+          );
+          refreshedLabel.font = Font.mediumSystemFont(10);
+          refreshedLabel.textColor = new Color("#ACACAD");
+        } else {
+          // At most 3 arrivals: the immediate next one plus up to 2 after
+          // it. Each gets its own row; only the first is spotlighted.
+          const rowsToShow = [next, ...upcoming].slice(0, 3);
+
+          rowsToShow.forEach((arrival, i) => {
+            const isFirst = i === 0;
+            let label;
+            if (isFirst && isArrivingNow) {
+              label = "Arriving";
+            } else if (isFirst) {
+              label = nextArrivalDate ? formatClock(nextArrivalDate) : (arrival.waitingTime || "—");
+            } else {
+              label = upcomingClockLabel(arrival);
+            }
+
+            const rowText = widget.addText(label);
+            rowText.font = isFirst ? Font.boldSystemFont(20) : Font.systemFont(13);
+            rowText.textColor = isFirst ? new Color("#E8A33D") : new Color("#7B8494");
+            rowText.lineLimit = 1;
+            if (isFirst) rowText.minimumScaleFactor = 0.6;
+
+            if (isFirst && isArrivingNow && nextArrivalDate) {
+              widget.addSpacer(2);
+              const atLabel = widget.addText(\`at \${formatClock(nextArrivalDate)}\`);
+              atLabel.font = Font.systemFont(10);
+              atLabel.textColor = new Color("#7B8494");
+            }
+
+            if (i < rowsToShow.length - 1) widget.addSpacer(isFirst ? 6 : 3);
+          });
+
+          // Brighter than the other secondary text — the one line worth
+          // an extra glance as the honesty check for staleness.
+          widget.addSpacer(10);
+          const refreshedLabel = widget.addText(\`Last refreshed \${new Date(lastRefreshedAt || Date.now()).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}\`);
+          refreshedLabel.font = Font.mediumSystemFont(10);
+          refreshedLabel.textColor = new Color("#ACACAD");
+        }
+      }
+
+      // iOS controls the actual refresh timing. Request another refresh no sooner
+      // than about every 15 minutes rather than repeatedly refreshing every few seconds.
+      widget.refreshAfterDate = new Date(Date.now() + 15 * 60 * 1000);
+
+      if (config.runsInWidget) {
+        Script.setWidget(widget);
+      } else {
+        widget.presentMedium();
+      }
+      Script.complete();
+      `;
+      }
+
+      stationSelect.addEventListener("change", () => {
+        const station = stationSelect.value;
+        resetLineAndDestination();
+        if (station) {
+          const lines = Object.keys(STATION_DATA[station]);
+          lines.forEach((line) => {
+            const opt = document.createElement("option");
+            opt.value = line;
+            opt.textContent =
+              line.charAt(0) + line.slice(1).toLowerCase() + " Line";
+            lineSelect.appendChild(opt);
+          });
+          lineSelect.disabled = false;
+
+          // If this station is only served by one line, pick it for the
+          // user instead of making them choose from a single-item list.
+          if (lines.length === 1) {
+            lineSelect.value = lines[0];
+            lineSelect.dispatchEvent(new Event("change"));
+            return;
+          }
+        }
+        tryGenerate();
+      });
+
+      lineSelect.addEventListener("change", () => {
+        const station = stationSelect.value;
+        const line = lineSelect.value;
+        destinationSelect.innerHTML =
+          '<option value="">Choose a direction…</option>';
+        if (station && line) {
+          const destinations = STATION_DATA[station][line];
+          destinations.forEach((dest) => {
+            const opt = document.createElement("option");
+            opt.value = dest;
+            opt.textContent = dest;
+            destinationSelect.appendChild(opt);
+          });
+          destinationSelect.disabled = false;
+
+          // Same idea for direction: some station
+          if (destinations.length === 1) {
+            destinationSelect.value = destinations[0];
+          }
+        } else {
+          destinationSelect.disabled = true;
+        }
+        tryGenerate();
+      });
+
+      destinationSelect.addEventListener("change", tryGenerate);
+
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(preview.textContent);
+          copyBtn.textContent = "Copied";
+          copyBtn.dataset.copied = "true";
+          setTimeout(() => {
+            copyBtn.textContent = "Copy script to clipboard";
+            copyBtn.dataset.copied = "false";
+          }, 2000);
+        } catch (e) {
+          // navigator.clipboard requires a secure context (HTTPS, or literally
+          // the hostname "localhost"). Meanwhile, reveal and auto-select the
+          // script text so the user only has to tap "Copy"
+          preview.style.display = "block";
+          scriptVisible = true;
+          toggleBtn.textContent = "Hide script";
+
+          const range = document.createRange();
+          range.selectNodeContents(preview);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+
+          copyBtn.textContent = "Selected below — tap Copy";
+        }
+      });
+
+      toggleBtn.addEventListener("click", () => {
+        scriptVisible = !scriptVisible;
+        preview.style.display = scriptVisible ? "block" : "none";
+        toggleBtn.textContent = scriptVisible ? "Hide script" : "Show script";
+      });
+
+      // ---------- Live hero board (Five Points, Gold line, Airport) ----------
+
+      // Same clock-deriving logic as the generated Scriptable script,
+      // duplicated here so this hero mock behaves identically
+      function parseClockTimeToday(clockStr) {
+        if (!clockStr) return null;
+        const match = clockStr.trim().match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
+        if (!match) return null;
+        let hours = parseInt(match[1], 10) % 12;
+        const minutes = parseInt(match[2], 10);
+        if (match[3].toUpperCase() === "PM") hours += 12;
+        const result = new Date();
+        result.setHours(hours, minutes, 0, 0);
+        const sixHoursMs = 6 * 60 * 60 * 1000;
+        if (result.getTime() < Date.now() - sixHoursMs) {
+          result.setDate(result.getDate() + 1);
+        }
+        return result;
+      }
+
+      function deriveTargetDate(arrivalObj) {
+        if (!arrivalObj) return null;
+        const fromClockString = parseClockTimeToday(arrivalObj.arrival);
+        if (fromClockString) return fromClockString;
+        const match =
+          arrivalObj.waitingTime &&
+          arrivalObj.waitingTime.match(/(\d+(?:\.\d+)?)\s*min/i);
+        if (match) {
+          return new Date(Date.now() + parseFloat(match[1]) * 60000);
+        }
+        return null;
+      }
+
+      function formatClock(date) {
+        return date.toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+        });
+      }
+
+      const HERO_AUTO_REFRESH_MS = 30 * 1000;
+      const heroRefreshBtn = document.getElementById("hero-refresh-btn");
+      let heroLoading = false;
+
+      async function loadHeroBoard() {
+        if (heroLoading) return;
+        heroLoading = true;
+        heroLastLoadedAt = Date.now();
+        heroRefreshBtn.disabled = true;
+        heroRefreshBtn.textContent = "Refreshing…";
+
+        const footer = document.getElementById("hero-footer");
+        const heroStation = "Five Points";
+        const heroLine = "GOLD";
+        const heroDestination = "Airport";
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/next-train?station=${encodeURIComponent(heroStation)}&line=${heroLine}&destination=${encodeURIComponent(heroDestination)}`,
+          );
+          if (!response.ok) throw new Error("bad response");
+          const result = await response.json();
+          const arrivals = Array.isArray(result.arrivals)
+            ? result.arrivals
+            : [];
+
+          if (arrivals.length === 0) throw new Error("no arrivals");
+
+          const next = arrivals[0];
+          const upcoming = arrivals.slice(1, 3);
+          const isArrivingNow = next.waitingTime === "Arriving";
+          const nextArrivalDate = deriveTargetDate(next);
+
+          document.getElementById("hero-station").textContent =
+            heroStation.toUpperCase();
+          document.getElementById("hero-linedest").textContent =
+            `${heroLine} → ${heroDestination}`;
+
+          const headlineEl = document.getElementById("hero-headline");
+          if (isArrivingNow) {
+            headlineEl.textContent = "Arriving";
+          } else if (nextArrivalDate) {
+            headlineEl.textContent = formatClock(nextArrivalDate);
+          } else {
+            headlineEl.textContent = next.waitingTime || "—";
+          }
+
+          document.getElementById("hero-refreshed").textContent =
+            `Last refreshed ${formatClock(new Date())}`;
+
+          const upcomingLabels = upcoming.map((arrival) => {
+            const d = deriveTargetDate(arrival);
+            return d ? formatClock(d) : arrival.waitingTime || "—";
+          });
+          const nextEl = document.getElementById("hero-next");
+          if (upcomingLabels.length) {
+            nextEl.style.display = "";
+            nextEl.textContent = `Next trains: ${upcomingLabels.join(", ")}`;
+          } else {
+            nextEl.style.display = "none";
+          }
+
+          footer.textContent = "Live — connected to MARTA";
+        } catch (e) {
+          footer.textContent =
+            "LIVE PREVIEW UNAVAILABLE — SHOWING EXAMPLE LAYOUT";
+        } finally {
+          heroLoading = false;
+          heroRefreshBtn.disabled = false;
+          heroRefreshBtn.textContent = "Refresh";
+        }
+      }
+
+      heroRefreshBtn.addEventListener("click", loadHeroBoard);
+
+      let heroLastLoadedAt = 0;
+      const loadHeroIfStale = () => {
+        if (document.hidden) return;
+        if (Date.now() - heroLastLoadedAt < HERO_AUTO_REFRESH_MS) return;
+        loadHeroBoard();
+      };
+
+      loadHeroBoard();
+      setInterval(loadHeroIfStale, HERO_AUTO_REFRESH_MS);
+      document.addEventListener("visibilitychange", loadHeroIfStale);
+    </script>
+  </body>
+</html>
