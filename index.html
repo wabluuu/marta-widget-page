@@ -1079,8 +1079,8 @@
           // No arrivals. If the server sent a notice (e.g. no Red Line
           // service here at night), show that instead of the generic text.
           const emptyLabel = widget.addText(notice || "No trains soon");
-          emptyLabel.font = Font.systemFont(notice ? 12 : 14);
-          emptyLabel.textColor = new Color("#7B8494");
+          emptyLabel.font = notice ? Font.mediumSystemFont(14) : Font.systemFont(14);
+          emptyLabel.textColor = new Color(notice ? "#FFFFFF" : "#7B8494");
           emptyLabel.centerAlignText();
           emptyLabel.lineLimit = notice ? 3 : 1;
           emptyLabel.minimumScaleFactor = 0.7;
@@ -1113,7 +1113,21 @@
         // Footer: only when the fetch succeeded (on an error nothing was
         // actually refreshed, so a timestamp would be misleading).
         if (!fetchError) {
-          widget.addSpacer(8);
+          // Trains exist but there's something to flag (e.g. Red Line
+          // trains ending at Lindbergh Center at night). Sits between the
+          // time and "Last refreshed". When there are no trains the notice
+          // already replaced "No trains soon" above.
+          if (notice && next) {
+            widget.addSpacer(4);
+            const noticeLabel = widget.addText(notice);
+            noticeLabel.font = Font.mediumSystemFont(11);
+            noticeLabel.textColor = new Color("#FFFFFF");
+            noticeLabel.centerAlignText();
+            noticeLabel.lineLimit = 1;
+            noticeLabel.minimumScaleFactor = 0.7;
+          }
+
+          widget.addSpacer(notice && next ? 6 : 8);
 
           const refreshedLabel = widget.addText(\`Last refreshed \${formatClock(new Date(lastRefreshedAt || Date.now()))}\`);
           refreshedLabel.font = Font.mediumSystemFont(10);
@@ -1130,17 +1144,6 @@
             nextTrainsLabel.centerAlignText();
             nextTrainsLabel.lineLimit = 1;
             nextTrainsLabel.minimumScaleFactor = 0.6;
-          }
-
-          // Trains exist but there's something to flag
-          if (notice && next) {
-            widget.addSpacer(4);
-            const noticeLabel = widget.addText(notice);
-            noticeLabel.font = Font.systemFont(9);
-            noticeLabel.textColor = new Color("#ACACAD");
-            noticeLabel.centerAlignText();
-            noticeLabel.lineLimit = 3;
-            noticeLabel.minimumScaleFactor = 0.6;
           }
         }
 
@@ -1187,7 +1190,7 @@
           // that instead of the generic text.
           const empty = widget.addText(notice || "No trains soon");
           empty.font = Font.systemFont(notice ? 13 : 14);
-          empty.textColor = new Color("#7B8494");
+          empty.textColor = new Color(notice ? "#FFFFFF" : "#7B8494");
           empty.lineLimit = notice ? 3 : 1;
           empty.minimumScaleFactor = 0.7;
           widget.addSpacer(6);
@@ -1228,22 +1231,24 @@
             if (i < rowsToShow.length - 1) widget.addSpacer(isFirst ? 6 : 3);
           });
 
+          // Trains exist but there's something to flag (e.g. Red Line
+          // trains ending at Lindbergh Center at night). Sits between the
+          // arrival rows and "Last refreshed".
+          if (notice) {
+            widget.addSpacer(8);
+            const noticeLabel = widget.addText(notice);
+            noticeLabel.font = Font.mediumSystemFont(12);
+            noticeLabel.textColor = new Color("#FFFFFF");
+            noticeLabel.lineLimit = 1;
+            noticeLabel.minimumScaleFactor = 0.7;
+          }
+
           // Brighter than the other secondary text — the one line worth
           // an extra glance as the honesty check for staleness.
-          widget.addSpacer(10);
+          widget.addSpacer(notice ? 6 : 10);
           const refreshedLabel = widget.addText(\`Last refreshed \${new Date(lastRefreshedAt || Date.now()).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}\`);
           refreshedLabel.font = Font.mediumSystemFont(10);
           refreshedLabel.textColor = new Color("#ACACAD");
-
-          // Trains exist but there's something to flag
-          if (notice) {
-            widget.addSpacer(6);
-            const noticeLabel = widget.addText(notice);
-            noticeLabel.font = Font.systemFont(10);
-            noticeLabel.textColor = new Color("#ACACAD");
-            noticeLabel.lineLimit = 2;
-            noticeLabel.minimumScaleFactor = 0.7;
-          }
         }
       }
 
