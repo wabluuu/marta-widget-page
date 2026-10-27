@@ -459,8 +459,7 @@
   <body>
     <div class="wrap">
       <div class="hero">
-        <p class="hero-label">A widget for MARTA riders</p>
-        <h1>Your next train, on your home screen.</h1>
+        <h1>Your next train at a glance!</h1>
 
         <div class="widget-stage" aria-hidden="true">
           <div class="widget-mock" id="hero-widget">
@@ -663,19 +662,36 @@
           <p>
             Yes. Each widget shows one station, line, and direction, so generate
             a script for each one you want. Save each as its own script in
-            Scriptable, then add another Scriptable widget to your home screen
+            Scriptable, then
+            <strong>add another Scriptable widget to your home screen</strong>
             and point it at that script.
           </p>
         </details>
         <details>
           <summary>Why does it say &ldquo;No trains soon&rdquo;?</summary>
           <p>
-            The widget reached MARTA's data fine, but there are no upcoming
-            arrivals listed for that station, line, and direction right now.
-            That's common late at night or when service has ended for the day.
-            It's different from &ldquo;Can't load data&rdquo;, which means the
-            widget couldn't reach the service at all. In that case, tap the
-            widget to try again.
+            There are <strong>no upcoming arrivals</strong> listed for that
+            station, line, and direction right now. That's common late at night
+            or when service has ended for the day. It's different from
+            &ldquo;Can't load data&rdquo;, which means the widget couldn't reach
+            the service at all. In that case, tap the widget to try again.
+          </p>
+        </details>
+        <details>
+          <summary>Why does it say &ldquo;Can't load data&rdquo;?</summary>
+          <p>
+            The service that provides the MARTA arrival data can take time to
+            boot up if it goes unused for a while. Give it 30-60 seconds and
+            <strong>tap the widget to try again</strong>!
+          </p>
+        </details>
+        <details>
+          <summary>Why is this lowkey janky?</summary>
+          <p>
+            This is just a quick side project I did to fulfill my own needs. If
+            this grows more and has a large user base then I can upgrade the
+            services this is hosted on. Reach out on Reddit or GitHub Issues if
+            you have feedback, bug reports, or requests!
           </p>
         </details>
         <details>
@@ -733,11 +749,6 @@
     </div>
 
     <script>
-      // Complete MARTA rail map: for each station, which lines serve it,
-      // and for each line, the valid destination directions from that
-      // station. This is the source of truth for the dropdowns below —
-      // keep it in sync with the backend's stations.js SUPPORTED_STATIONS
-      // and LINE_DESTINATIONS if either ever changes.
       const STATION_DATA = {
         "North Springs": { RED: ["Airport"] },
         "Sandy Springs": { RED: ["North Springs", "Airport"] },
@@ -894,8 +905,6 @@
         copyBtn.textContent = "Copy script to clipboard";
         copyBtn.dataset.copied = "false";
         toggleBtn.disabled = false;
-        // Collapse the script again any time the selection changes —
-        // it's a different script now, so don't leave a stale one open.
         scriptVisible = false;
         preview.style.display = "none";
         toggleBtn.textContent = "Show script";
@@ -1235,8 +1244,6 @@
           });
           lineSelect.disabled = false;
 
-          // If this station is only served by one line, pick it for the
-          // user instead of making them choose from a single-item list.
           if (lines.length === 1) {
             lineSelect.value = lines[0];
             lineSelect.dispatchEvent(new Event("change"));
@@ -1283,9 +1290,6 @@
             copyBtn.dataset.copied = "false";
           }, 2000);
         } catch (e) {
-          // navigator.clipboard requires a secure context (HTTPS, or literally
-          // the hostname "localhost"). Meanwhile, reveal and auto-select the
-          // script text so the user only has to tap "Copy"
           preview.style.display = "block";
           scriptVisible = true;
           toggleBtn.textContent = "Hide script";
@@ -1308,8 +1312,7 @@
 
       // ---------- Live hero board (Five Points, Gold line, Airport) ----------
 
-      // Same clock-deriving logic as the generated Scriptable script,
-      // duplicated here so this hero mock behaves identically
+      // Same clock-deriving logic as the generated Scriptable script
       function parseClockTimeToday(clockStr) {
         if (!clockStr) return null;
         const match = clockStr.trim().match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
