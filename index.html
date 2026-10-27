@@ -971,10 +971,12 @@
 
       // The backend now returns { arrivals: [...] } — up to 3 upcoming
       // arrivals, soonest first. \`next\` is the one to headline; \`upcoming\`
-      // is what comes after it.
+      // is what comes after it. It may also include a short \`notice\`
+      // string (e.g. Red Line night service) to show to the rider.
       const arrivals = data && Array.isArray(data.arrivals) ? data.arrivals : [];
       const next = arrivals[0] || null;
       const upcoming = arrivals.slice(1, 3);
+      const notice = data && typeof data.notice === "string" && data.notice ? data.notice : null;
 
       // Parse a "5:47 PM"-style clock string into a real Date for *today*.
       // If the parsed time looks like it's more than a few hours in the
@@ -1074,11 +1076,14 @@
           errLabel.lineLimit = 1;
           errLabel.minimumScaleFactor = 0.6;
         } else if (!next) {
-          const emptyLabel = widget.addText("No trains soon");
-          emptyLabel.font = Font.systemFont(14);
+          // No arrivals. If the server sent a notice (e.g. no Red Line
+          // service here at night), show that instead of the generic text.
+          const emptyLabel = widget.addText(notice || "No trains soon");
+          emptyLabel.font = Font.systemFont(notice ? 12 : 14);
           emptyLabel.textColor = new Color("#7B8494");
           emptyLabel.centerAlignText();
-          emptyLabel.lineLimit = 1;
+          emptyLabel.lineLimit = notice ? 3 : 1;
+          emptyLabel.minimumScaleFactor = 0.7;
         } else if (isArrivingNow) {
           const arrivingLabel = widget.addText("Arriving");
           arrivingLabel.font = Font.boldSystemFont(24);
@@ -1126,6 +1131,17 @@
             nextTrainsLabel.lineLimit = 1;
             nextTrainsLabel.minimumScaleFactor = 0.6;
           }
+
+          // Trains exist but there's something to flag
+          if (notice && next) {
+            widget.addSpacer(4);
+            const noticeLabel = widget.addText(notice);
+            noticeLabel.font = Font.systemFont(9);
+            noticeLabel.textColor = new Color("#ACACAD");
+            noticeLabel.centerAlignText();
+            noticeLabel.lineLimit = 3;
+            noticeLabel.minimumScaleFactor = 0.6;
+          }
         }
 
         widget.addSpacer();
@@ -1166,10 +1182,14 @@
           errText.font = Font.systemFont(10);
           errText.textColor = new Color("#7B8494");
         } else if (!next) {
-          // Successful response, genuinely nothing scheduled right now.
-          const empty = widget.addText("No trains soon");
-          empty.font = Font.systemFont(14);
+          // Successful response, nothing to show right now. If the server
+          // sent a notice (e.g. no Red Line service here at night), show
+          // that instead of the generic text.
+          const empty = widget.addText(notice || "No trains soon");
+          empty.font = Font.systemFont(notice ? 13 : 14);
           empty.textColor = new Color("#7B8494");
+          empty.lineLimit = notice ? 3 : 1;
+          empty.minimumScaleFactor = 0.7;
           widget.addSpacer(6);
           const refreshedLabel = widget.addText(
             \`Last refreshed \${new Date(lastRefreshedAt || Date.now()).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}\`,
@@ -1214,6 +1234,16 @@
           const refreshedLabel = widget.addText(\`Last refreshed \${new Date(lastRefreshedAt || Date.now()).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}\`);
           refreshedLabel.font = Font.mediumSystemFont(10);
           refreshedLabel.textColor = new Color("#ACACAD");
+
+          // Trains exist but there's something to flag
+          if (notice) {
+            widget.addSpacer(6);
+            const noticeLabel = widget.addText(notice);
+            noticeLabel.font = Font.systemFont(10);
+            noticeLabel.textColor = new Color("#ACACAD");
+            noticeLabel.lineLimit = 2;
+            noticeLabel.minimumScaleFactor = 0.7;
+          }
         }
       }
 
